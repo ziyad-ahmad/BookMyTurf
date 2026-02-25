@@ -17,16 +17,15 @@ import jakarta.servlet.http.*;
 )
 public class TurfRegister extends HttpServlet {
 
-    private static final String UPLOAD_PATH = "D:\\TurfImages"; // ✅ fixed folder path
-
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         response.setContentType("text/html;charset=UTF-8");
 
-        // --- Ensure folder exists ---
-        File uploadDir = new File(UPLOAD_PATH);
+        // ✅ Correct upload path for GlassFish (deployed app folder)
+        String appPath = request.getServletContext().getRealPath("");
+        File uploadDir = new File(appPath, "uploads");
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
@@ -66,7 +65,6 @@ public class TurfRegister extends HttpServlet {
         ResultSet rs = null;
 
         try {
-            // --- DB Connection ---
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/turf_booking?useSSL=false",
@@ -77,6 +75,7 @@ public class TurfRegister extends HttpServlet {
             String cleanedTurfName = turfName.replaceAll("\\s+", "");
             String turfUserId = "";
             boolean exists = true;
+
             while (exists) {
                 int randomNum = (int) (Math.random() * 9000) + 1000;
                 turfUserId = cleanedTurfName + randomNum;
@@ -91,10 +90,11 @@ public class TurfRegister extends HttpServlet {
                 checkPs.close();
             }
 
-            // --- Insert Turf Registration (with turf_user_id) ---
+            // --- Insert turf ---
             String sqlTurf = "INSERT INTO turf_registration "
                     + "(turf_user_id, owner_name, email, password, turf_name, turf_address, turf_phone, price_per_hour, upi_id, account_number, bank_name, ifsc_code) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             psTurf = conn.prepareStatement(sqlTurf, Statement.RETURN_GENERATED_KEYS);
             psTurf.setString(1, turfUserId);
             psTurf.setString(2, ownerName);
@@ -116,10 +116,9 @@ public class TurfRegister extends HttpServlet {
                 if (rs.next()) {
                     int turfId = rs.getInt(1);
 
-                    // Save all 3 images
-                    saveImage(conn, request, turfId, "turfPhotos", "turf_photo");
-                    saveImage(conn, request, turfId, "ownershipProof", "ownership_proof");
-                    saveImage(conn, request, turfId, "businessCertificate", "business_certificate");
+                    saveImage(conn, request, uploadDir, turfId, "turfPhotos", "turf_photo");
+                    saveImage(conn, request, uploadDir, turfId, "ownershipProof", "ownership_proof");
+                    saveImage(conn, request, uploadDir, turfId, "businessCertificate", "business_certificate");
                 }
             }
 
@@ -127,8 +126,7 @@ public class TurfRegister extends HttpServlet {
 
             response.getWriter().println("✅ Registration successful!<br>"
                     + "Your Turf User ID: <b>" + turfUserId + "</b><br>"
-                    + "Your turf details are under admin review.<br>"
-                    + "You’ll be able to log in after approval.");
+                    + "Your turf details are under admin review.");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,28 +142,19 @@ public class TurfRegister extends HttpServlet {
         }
     }
 
-    private void saveImage(Connection conn, HttpServletRequest request, int turfId, String fieldName, String imageType)
+    private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
+                           int turfId, String fieldName, String imageType)
             throws IOException, ServletException, SQLException {
 
         for (Part part : request.getParts()) {
             if (part.getName().equals(fieldName) && part.getSize() > 0) {
-                String fileName = Paths.get(part.getSubmittedFileName()).getFileName().toString();
-                File fileSaveDir = new File(UPLOAD_PATH);
-                if (!fileSaveDir.exists()) {
-                    fileSaveDir.mkdirs();
-                }
 
-                // Save image
-                File savedFile = new File(fileSaveDir, fileName);
-                try (java.io.InputStream input = part.getInputStream()) {
-                    java.nio.file.Files.copy(
-                            input,
-                            savedFile.toPath(),
-                            java.nio.file.StandardCopyOption.REPLACE_EXISTING
-                    );
-                }
+                String fileName = System.currentTimeMillis() + "_" +
+                        Paths.get(part.getSubmittedFileName()).getFileName().toString();
 
-                // Save image details in DB
+                File savedFile = new File(uploadDir, fileName);
+                part.write(savedFile.getAbsolutePath());
+
                 String sql = "INSERT INTO turf_images (turf_id, image_type, image_path) VALUES (?, ?, ?)";
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ps.setInt(1, turfId);
