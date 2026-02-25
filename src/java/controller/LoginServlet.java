@@ -29,7 +29,7 @@ public class LoginServlet extends HttpServlet {
             HttpSession session = request.getSession();
             session.setAttribute("role", "superadmin");
             session.setAttribute("name", "Super Admin");
-            response.sendRedirect("SuperAdminDashboard"); // recommended
+            response.sendRedirect("SuperAdmin.jsp"); // recommended
             return;
         }
 
