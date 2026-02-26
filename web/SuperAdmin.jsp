@@ -3,7 +3,7 @@
     Created on : 21 Oct 2025
     Author     : Ziyad
 --%>
-
+<%--
 <%@ page contentType="text/html" pageEncoding="UTF-8" language="java" %>
 <%@ page import="java.sql.*" %>
 
@@ -275,4 +275,198 @@
             AOS.init({duration: 1000, once: true});
         </script>
     </body>
+</html>
+--%>
+
+
+
+<%-- 
+    Document   : SuperAdmin.jsp
+    Created on : 21 Oct 2025
+    Author     : Ziyad
+--%>
+
+<%@ page contentType="text/html" pageEncoding="UTF-8" language="java" %>
+<%@ page import="java.sql.*" %>
+
+<%
+    HttpSession session1 = request.getSession(false);
+    if (session1 == null || !"superadmin".equals(session1.getAttribute("role"))) {
+        response.sendRedirect("UserLogin.jsp");
+        return;
+    }
+%>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Admin | Turf Approval Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Google Fonts + Bootstrap -->
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- AOS Animations -->
+    <link rel="stylesheet" href="css/aos.css">
+
+    <style>
+        body {
+            background-color: #f5f9f6;
+            font-family: 'Work Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        main { margin-top: 90px; }
+
+        .admin-hero {
+            background: linear-gradient(120deg, #009970, #00b894);
+            color: white;
+            text-align: center;
+            padding: 80px 0 60px;
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .table-section {
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .table thead {
+            background: linear-gradient(90deg, #009970, #00b894);
+            color: #fff;
+        }
+
+        img {
+            border-radius: 8px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body>
+<%@include file="header.jsp" %>
+
+<main>
+    <section class="admin-hero">
+        <div class="container">
+            <h1><i class="bi bi-speedometer2 me-2"></i>Super Admin Dashboard</h1>
+            <p class="lead mt-3">Manage turf approvals and review applications easily.</p>
+        </div>
+    </section>
+
+    <div class="container table-section">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+            <h4 class="text-secondary">Turf Approval List</h4>
+            <a href="LogoutServlet" class="btn btn-outline-danger btn-sm">Logout</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Turf User ID</th>
+                    <th>Owner Name</th>
+                    <th>Email</th>
+                    <th>Turf Name</th>
+                    <th>Address</th>
+                    <th>Phone</th>
+                    <th>Price/hr</th>
+                    <th>UPI ID</th>
+                    <th>Bank Details</th>
+                    <th>Images</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <%
+                    try (Connection con = DriverManager.getConnection(
+                            "jdbc:mysql://localhost:3306/turf_booking?useSSL=false",
+                            "root", "password@mysql")) {
+
+                        Class.forName("com.mysql.cj.jdbc.Driver");
+                        PreparedStatement ps = con.prepareStatement("SELECT * FROM turf_registration");
+                        ResultSet rs = ps.executeQuery();
+
+                        while (rs.next()) {
+                            int turfId = rs.getInt("turf_id");
+                %>
+                <tr>
+                    <td><%= turfId %></td>
+                    <td><strong><%= rs.getString("turf_user_id") %></strong></td>
+                    <td><%= rs.getString("owner_name") %></td>
+                    <td><%= rs.getString("email") %></td>
+                    <td><%= rs.getString("turf_name") %></td>
+                    <td><%= rs.getString("turf_address") %></td>
+                    <td><%= rs.getString("turf_phone") %></td>
+                    <td>₹<%= rs.getDouble("price_per_hour") %></td>
+                    <td><%= rs.getString("upi_id") %></td>
+                    <td class="text-start small">
+                        <b>Acc:</b> <%= rs.getString("account_number") %><br>
+                        <b>Bank:</b> <%= rs.getString("bank_name") %> (<%= rs.getString("ifsc_code") %>)
+                    </td>
+                    <td>
+                        <%
+                            PreparedStatement psImg = con.prepareStatement(
+                                    "SELECT image_path FROM turf_images WHERE turf_id=?");
+                            psImg.setInt(1, turfId);
+                            ResultSet rsImg = psImg.executeQuery();
+                            while (rsImg.next()) {
+                        %>
+                        <img src="<%= request.getContextPath() %>/uploads/<%= rsImg.getString("image_path") %>"
+                             width="90" height="70"
+                             onerror="this.src='<%= request.getContextPath() %>/images/default-turf.jpg'">
+                        <br>
+                        <%
+                            }
+                        %>
+                    </td>
+                    <td>
+                        <%
+                            String status = rs.getString("approval_status");
+                            if ("Approved".equals(status)) {
+                        %>
+                        <span class="badge bg-success">Approved</span>
+                        <% } else if ("Rejected".equals(status)) { %>
+                        <span class="badge bg-danger">Rejected</span>
+                        <% } else { %>
+                        <span class="badge bg-warning text-dark">Pending</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if ("Pending".equals(status)) { %>
+                        <a href="<%= request.getContextPath() %>/ApproveTurfServlet?turf_id=<%= turfId %>"
+                           class="btn btn-success btn-sm">Approve</a>
+                        <a href="<%= request.getContextPath() %>/RejectTurfServlet?turf_id=<%= turfId %>"
+                           class="btn btn-danger btn-sm">Reject</a>
+                        <% } else { %>
+                        Done
+                        <% } %>
+                    </td>
+                </tr>
+                <%
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%@include file="footer.jsp" %>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
