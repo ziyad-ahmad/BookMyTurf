@@ -91,6 +91,13 @@ public class RegisterUser extends HttpServlet {
             request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
             return;
         }
+
+        // ----- Phone format validation (10 digits only) -----
+        if (!phone.matches("^[0-9]{10}$")) {
+            request.setAttribute("errorMsg", "❌ Phone number must contain exactly 10 digits.");
+            request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
+            return;
+        }
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -113,6 +120,36 @@ public class RegisterUser extends HttpServlet {
 
             if (rs.getInt(1) > 0) {
                 request.setAttribute("errorMsg", "⚠️ Email already registered!");
+                request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
+                return;
+            }
+            rs.close();
+            ps.close();
+
+            // ----- Phone Duplication Check -----
+            String phoneCheckQuery = "SELECT COUNT(*) FROM users WHERE phone = ?";
+            ps = conn.prepareStatement(phoneCheckQuery);
+            ps.setString(1, phone);
+            rs = ps.executeQuery();
+            rs.next();
+
+            if (rs.getInt(1) > 0) {
+                request.setAttribute("errorMsg", "❌ Phone number already registered!");
+                request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
+                return;
+            }
+            rs.close();
+            ps.close();
+
+            // ----- Name Duplication Check -----
+            String nameCheckQuery = "SELECT COUNT(*) FROM users WHERE name = ?";
+            ps = conn.prepareStatement(nameCheckQuery);
+            ps.setString(1, name);
+            rs = ps.executeQuery();
+            rs.next();
+
+            if (rs.getInt(1) > 0) {
+                request.setAttribute("errorMsg", "❌ Username already exists! Please choose another name.");
                 request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
                 return;
             }
