@@ -5,11 +5,64 @@ import java.sql.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-
 import org.mindrot.jbcrypt.BCrypt;
+import java.util.Properties;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 
 @WebServlet(urlPatterns = {"/RegisterUser"})
 public class RegisterUser extends HttpServlet {
+
+    private boolean sendConfirmationEmail(String toEmail, String userId, String name) {
+
+        final String fromEmail = "personal.one0371@gmail.com";
+        final String password = "gormsmcozvmizfwu"; // Gmail App Password
+
+        Properties props = new Properties();
+
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+
+        Session session = Session.getInstance(props,
+                new jakarta.mail.Authenticator() {
+
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(fromEmail, password);
+            }
+        });
+
+        try {
+
+            Message message = new MimeMessage(session);
+
+            message.setFrom(new InternetAddress(fromEmail, "Turf Booking"));
+
+            message.setRecipients(
+                    Message.RecipientType.TO,
+                    InternetAddress.parse(toEmail)
+            );
+
+            message.setSubject("Registration Successful");
+
+            message.setText(
+                    "Hello " + name + ",\n\n"
+                    + "Your registration was successful.\n"
+                    + "Your User ID is: " + userId + "\n\n"
+                    + "You can login now.\n\n"
+                    + "Turf Booking Team"
+            );
+
+            Transport.send(message);
+
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -78,6 +131,15 @@ public class RegisterUser extends HttpServlet {
             rs.close();
             ps.close();
 
+            // Send confirmation email
+            boolean emailSent = sendConfirmationEmail(email, userId, name);
+
+            if (!emailSent) {
+                request.setAttribute("errorMsg", "❌ Email sending failed!");
+                request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
+                return;
+            }
+
             // ----- Insert User Data -----
             String insertSQL = "INSERT INTO users (user_id, name, email, phone, password, gender) "
                     + "VALUES (?, ?, ?, ?, ?, ?)";
@@ -86,7 +148,7 @@ public class RegisterUser extends HttpServlet {
             ps.setString(2, name);
             ps.setString(3, email);
             ps.setString(4, phone);
-            
+
             String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
             ps.setString(5, hashedPassword);
 
