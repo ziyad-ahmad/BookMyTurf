@@ -237,7 +237,6 @@ function openBooking(turfId){
 </html>
 %-->
 
-
 <%-- 
     Document   : SuperAdmin.jsp
     Created on : 21 Oct 2025
