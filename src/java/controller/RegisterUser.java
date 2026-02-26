@@ -86,7 +86,10 @@ public class RegisterUser extends HttpServlet {
             ps.setString(2, name);
             ps.setString(3, email);
             ps.setString(4, phone);
-            ps.setString(5, password);
+            
+            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+            ps.setString(5, hashedPassword);
+
             ps.setString(6, gender);
 
             int rows = ps.executeUpdate();
@@ -108,15 +111,33 @@ public class RegisterUser extends HttpServlet {
         } catch (Exception ex) {
             ex.printStackTrace();
             try {
-                if (conn != null) conn.rollback();
-            } catch (SQLException ignored) {}
+                if (conn != null) {
+                    conn.rollback();
+                }
+            } catch (SQLException ignored) {
+            }
             request.setAttribute("errorMsg", "🚫 Server Error: " + ex.getMessage());
             request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
 
         } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException ignored) {}
-            try { if (ps != null) ps.close(); } catch (SQLException ignored) {}
-            try { if (conn != null) conn.close(); } catch (SQLException ignored) {}
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ignored) {
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
