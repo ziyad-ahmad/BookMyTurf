@@ -91,7 +91,6 @@ public class RegisterUser extends HttpServlet {
             request.getRequestDispatcher("RegisterUser.jsp").forward(request, response);
             return;
         }
-
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -161,10 +160,9 @@ public class RegisterUser extends HttpServlet {
 
             if (rows > 0) {
                 conn.commit();
-
                 response.getWriter().println(
-                       " <script>"+
-                        "alert('Registration Successful!! Check your email  Your User ID: "+userId+"');"
+                        " <script>"
+                        + "alert('Registration Successful!! Check your email  Your User ID: " + userId + "');"
                         + "window.location='LoginUser.jsp';"
                         + "</script>"
                 );
