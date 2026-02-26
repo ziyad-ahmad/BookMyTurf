@@ -163,9 +163,10 @@ public class RegisterUser extends HttpServlet {
                 conn.commit();
 
                 response.getWriter().println(
-                        "<h3>✅ Registration Successful!</h3>"
-                        + "<p>Your User ID: <b>" + userId + "</b></p>"
-                        + "<p>You can now <a href='LoginUser.jsp'>Login</a>.</p>"
+                       " <script>"+
+                        "alert('Registration Successful!! Check your email  Your User ID: "+userId+"');"
+                        + "window.location='LoginUser.jsp';"
+                        + "</script>"
                 );
             } else {
                 conn.rollback();
