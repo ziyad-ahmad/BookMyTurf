@@ -12,8 +12,8 @@ import jakarta.servlet.http.*;
 @WebServlet(urlPatterns = {"/TurfRegister"})
 @MultipartConfig(
         fileSizeThreshold = 1024 * 1024 * 1, // 1MB
-        maxFileSize = 1024 * 1024 * 5,       // 5MB per file
-        maxRequestSize = 1024 * 1024 * 20    // 20MB total form
+        maxFileSize = 1024 * 1024 * 5, // 5MB per file
+        maxRequestSize = 1024 * 1024 * 20 // 20MB total form
 )
 public class TurfRegister extends HttpServlet {
 
@@ -23,11 +23,12 @@ public class TurfRegister extends HttpServlet {
 
         response.setContentType("text/html;charset=UTF-8");
 
-        // ✅ Correct upload path for GlassFish (deployed app folder)
-        String appPath = request.getServletContext().getRealPath("");
-        File uploadDir = new File(appPath, "uploads");
+        // ✅ Correct upload path for GlassFish (web root)
+        String webRoot = request.getServletContext().getRealPath("/");
+        File uploadDir = new File(webRoot, "uploads");
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
+            System.out.println("UPLOAD DIR (ACTUAL) = " + uploadDir.getAbsolutePath());
         }
 
         // --- Get form data ---
@@ -59,7 +60,6 @@ public class TurfRegister extends HttpServlet {
             request.getRequestDispatcher("Register.jsp").forward(request, response);
             return;
         }
-
         Connection conn = null;
         PreparedStatement psTurf = null;
         ResultSet rs = null;
@@ -68,7 +68,8 @@ public class TurfRegister extends HttpServlet {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/turf_booking?useSSL=false",
-                    "root", "password@mysql");
+                    "root", "password@mysql"
+            );
             conn.setAutoCommit(false);
 
             // --- Generate unique turf_user_id ---
@@ -115,7 +116,6 @@ public class TurfRegister extends HttpServlet {
                 rs = psTurf.getGeneratedKeys();
                 if (rs.next()) {
                     int turfId = rs.getInt(1);
-
                     saveImage(conn, request, uploadDir, turfId, "turfPhotos", "turf_photo");
                     saveImage(conn, request, uploadDir, turfId, "ownershipProof", "ownership_proof");
                     saveImage(conn, request, uploadDir, turfId, "businessCertificate", "business_certificate");
@@ -133,35 +133,81 @@ public class TurfRegister extends HttpServlet {
             response.getWriter().println("❌ Error: " + e.getMessage());
         } finally {
             try {
-                if (rs != null) rs.close();
-                if (psTurf != null) psTurf.close();
-                if (conn != null) conn.close();
+                if (rs != null) {
+                    rs.close();
+                }
+                if (psTurf != null) {
+                    psTurf.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
         }
     }
 
+//    private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
+//                           int turfId, String fieldName, String imageType)
+//            throws IOException, ServletException, SQLException {
+//
+//        if (!uploadDir.exists()) {
+//            uploadDir.mkdirs();
+//        }
+//
+//        for (Part part : request.getParts()) {
+//            if (part.getName().equals(fieldName) && part.getSize() > 0) {
+//
+//                String fileName = System.currentTimeMillis() + "_" +
+//                        Paths.get(part.getSubmittedFileName()).getFileName().toString();
+//
+//                File savedFile = new File(uploadDir, fileName);
+//                part.write(savedFile.getAbsolutePath());
+//
+//                String sql = "INSERT INTO turf_images (turf_id, image_type, image_path) VALUES (?, ?, ?)";
+//                PreparedStatement ps = conn.prepareStatement(sql);
+//                ps.setInt(1, turfId);
+//                ps.setString(2, imageType);
+//                ps.setString(3, fileName);
+//                ps.executeUpdate();
+//                ps.close();
+//            }
+//       }
+//    }
     private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
-                           int turfId, String fieldName, String imageType)
+            int turfId, String fieldName, String imageType)
             throws IOException, ServletException, SQLException {
+
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
 
         for (Part part : request.getParts()) {
             if (part.getName().equals(fieldName) && part.getSize() > 0) {
 
-                String fileName = System.currentTimeMillis() + "_" +
-                        Paths.get(part.getSubmittedFileName()).getFileName().toString();
+                String fileName = System.currentTimeMillis() + "_"
+                        + Paths.get(part.getSubmittedFileName()).getFileName().toString();
 
                 File savedFile = new File(uploadDir, fileName);
-                part.write(savedFile.getAbsolutePath());
+
+                // 🔥 Use stream copy instead of part.write()
+                try (java.io.InputStream in = part.getInputStream(); java.io.OutputStream out = new java.io.FileOutputStream(savedFile)) {
+
+                    byte[] buffer = new byte[8192];
+                    int len;
+                    while ((len = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, len);
+                    }
+                }
 
                 String sql = "INSERT INTO turf_images (turf_id, image_type, image_path) VALUES (?, ?, ?)";
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ps.setInt(1, turfId);
-                ps.setString(2, imageType);
-                ps.setString(3, fileName);
-                ps.executeUpdate();
-                ps.close();
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, turfId);
+                    ps.setString(2, imageType);
+                    ps.setString(3, fileName);
+                    ps.executeUpdate();
+                }
             }
         }
     }
