@@ -362,7 +362,6 @@ public class TurfRegister extends HttpServlet {
             try { if (conn != null) conn.close(); } catch (Exception ignored) {}
         }
     }
-
     private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
                            int turfId, String fieldName, String imageType)
             throws IOException, ServletException, SQLException {
