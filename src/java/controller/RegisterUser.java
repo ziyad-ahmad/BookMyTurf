@@ -6,6 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 @WebServlet(urlPatterns = {"/RegisterUser"})
 public class RegisterUser extends HttpServlet {
 
