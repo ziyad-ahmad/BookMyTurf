@@ -392,7 +392,6 @@ public class TurfRegister extends HttpServlet {
                     }
                 }
             }
-
             // Insert turf
             String sqlTurf = "INSERT INTO turf_registration "
                     + "(turf_user_id, owner_name, email, password, turf_name, turf_address, turf_phone, price_per_hour, upi_id, account_number, bank_name, ifsc_code) "
