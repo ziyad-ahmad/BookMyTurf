@@ -22,7 +22,7 @@ public class LoginServlet extends HttpServlet {
         String password = request.getParameter("password");
 
         if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
-            response.sendRedirect("UserLogin.jsp?error=empty");
+            response.sendRedirect("LoginUser.jsp?error=empty");
             return;
         }
 
@@ -37,8 +37,7 @@ public class LoginServlet extends HttpServlet {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            
-             // ======================================
+            // ======================================
             // ✅ NORMAL USER LOGIN (BCrypt encrypted)
             // ======================================
             String userSql = "SELECT user_id, name, password FROM users WHERE email=?";
@@ -46,7 +45,7 @@ public class LoginServlet extends HttpServlet {
             userPs.setString(1, email);
             ResultSet userRs = userPs.executeQuery();
 
-               if (userRs.next()) {
+            if (userRs.next()) {
 
                 String hashedPassword = userRs.getString("password");
 
@@ -59,37 +58,50 @@ public class LoginServlet extends HttpServlet {
 
                     response.sendRedirect("UserDashboardServlet");
                     return;
-                    } else {
-                    response.sendRedirect("UserLogin.jsp?error=invalid");
+                } else {
+                    response.sendRedirect("LoginUser.jsp?error=invalid");
                     return;
                 }
             }
 
             // ✅ TURF OWNER LOGIN
-            String turfSql = "SELECT * FROM turf_registration WHERE email=? AND password=?";
+//            String turfSql = "SELECT * FROM turf_registration WHERE email=? AND password=?";
+//            PreparedStatement turfPs = con.prepareStatement(turfSql);
+//            turfPs.setString(1, email);
+//            turfPs.setString(2, password);
+//            ResultSet turfRs = turfPs.executeQuery();
+            String turfSql = "SELECT turf_user_id, turf_name, password, approval_status FROM turf_registration WHERE email=?";
             PreparedStatement turfPs = con.prepareStatement(turfSql);
             turfPs.setString(1, email);
-            turfPs.setString(2, password);
             ResultSet turfRs = turfPs.executeQuery();
 
             if (turfRs.next()) {
-                String status = turfRs.getString("approval_status");
 
-                if (!"Approved".equalsIgnoreCase(status)) {
-                    response.getWriter().println(
-                        "<h3>Your turf is under admin review. Please wait for approval.</h3>");
+                String hashedPassword = turfRs.getString("password");
+
+                if (hashedPassword != null && BCrypt.checkpw(password, hashedPassword)) {
+
+                    String status = turfRs.getString("approval_status");
+
+                    if (!"Approved".equalsIgnoreCase(status)) {
+                       response.getWriter().println(
+                                "<h3>Your turf is under admin review. Please wait for approval.</h3>");
+                        return;
+                    }
+
+                    HttpSession session = request.getSession();
+                    session.setAttribute("turf_user_id", turfRs.getString("turf_user_id"));
+                    session.setAttribute("turf_name", turfRs.getString("turf_name"));
+                    session.setAttribute("role", "turf_owner");
+
+                    response.sendRedirect("OwnerDashboard");
+                    return;
+
+                } else {
+                    response.sendRedirect("LoginUser.jsp?error=invalid");
                     return;
                 }
-
-                HttpSession session = request.getSession();
-                session.setAttribute("turf_user_id", turfRs.getString("turf_user_id"));
-                session.setAttribute("turf_name", turfRs.getString("turf_name"));
-                session.setAttribute("role", "turf_owner");
-
-                response.sendRedirect("OwnerDashboard");
-                return;
             }
-
             // ❌ INVALID LOGIN
             response.sendRedirect("LoginUser.jsp?error=invalid");
 
