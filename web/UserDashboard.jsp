@@ -4,7 +4,13 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="java.util.*" %>
 <%@ page import="model.Turf" %>
-
+<%
+if (session.getAttribute("role") == null || 
+   !"user".equals(session.getAttribute("role"))) {
+    response.sendRedirect("LoginUser.jsp");
+    return;
+}
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
