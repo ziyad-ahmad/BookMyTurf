@@ -411,7 +411,6 @@ public class TurfRegister extends HttpServlet {
             psTurf.setString(10, accountNumber);
             psTurf.setString(11, bankName);
             psTurf.setString(12, ifscCode);
-
             int rows = psTurf.executeUpdate();
 
             if (rows > 0) {
