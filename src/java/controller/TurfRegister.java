@@ -148,7 +148,7 @@
 //        }
 //    }
 //
-////    private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
+ ////    private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
 ////                           int turfId, String fieldName, String imageType)
 ////            throws IOException, ServletException, SQLException {
 ////
@@ -228,18 +228,81 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.*;
+import jakarta.mail.Message;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+import java.util.Properties;
+import org.mindrot.jbcrypt.BCrypt;
 
 @WebServlet(urlPatterns = {"/TurfRegister"})
 @MultipartConfig(
-        fileSizeThreshold = 1024 * 1024 * 1,  // 1MB
-        maxFileSize = 1024 * 1024 * 5,        // 5MB per file
-        maxRequestSize = 1024 * 1024 * 20     // 20MB total
+        fileSizeThreshold = 1024 * 1024 * 1, // 1MB
+        maxFileSize = 1024 * 1024 * 5, // 5MB per file
+        maxRequestSize = 1024 * 1024 * 20 // 20MB total
 )
 public class TurfRegister extends HttpServlet {
 
     // 🔴 CHANGE THIS PATH to your project web/uploads folder
-    private static final String UPLOAD_ROOT =
-            "D:/NetBeans project/BookMyTurf/web/uploads";
+    private static final String UPLOAD_ROOT
+            = "D:/NetBeans project/BookMyTurf/web/uploads";
+
+    private boolean sendTurfConfirmationEmail(String toEmail, String turfUserId, String ownerName) {
+
+        final String fromEmail = "personal.one0371@gmail.com";
+        final String password = "gormsmcozvmizfwu"; // Gmail App Password
+
+        Properties props = new Properties();
+
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.starttls.required", "true");
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+
+        Session session = Session.getInstance(props,
+                new jakarta.mail.Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(fromEmail, password);
+            }
+        });
+
+        try {
+
+            Message message = new MimeMessage(session);
+
+            message.setFrom(new InternetAddress(fromEmail, "Book My Turf"));
+
+            message.setRecipients(
+                    Message.RecipientType.TO,
+                    InternetAddress.parse(toEmail)
+            );
+
+            message.setSubject("Turf Registration Successful ✅");
+
+            message.setText(
+                    "Hello " + ownerName + ",\n\n"
+                    + "Your turf registration request has been received.\n\n"
+                    + "Your Turf User ID: " + turfUserId + "\n\n"
+                    + "Your turf is currently under admin review.\n"
+                    + "You will be notified once approved.\n\n"
+                    + "Thank You,\n"
+                    + "Book My Turf Team"
+            );
+
+            Transport.send(message);
+
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -252,7 +315,7 @@ public class TurfRegister extends HttpServlet {
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
-        System.out.println("UPLOAD DIR (ACTUAL) = " + uploadDir.getAbsolutePath());
+//        System.out.println("UPLOAD DIR (ACTUAL) = " + uploadDir.getAbsolutePath());
 
         // --- Get form data ---
         String ownerName = request.getParameter("name");
@@ -295,6 +358,21 @@ public class TurfRegister extends HttpServlet {
                     "root", "password@mysql"
             );
             conn.setAutoCommit(false);
+            // ----- Email Duplication Check -----
+            String emailCheckQuery = "SELECT COUNT(*) FROM turf_registration WHERE email = ?";
+            PreparedStatement psCheck = conn.prepareStatement(emailCheckQuery);
+            psCheck.setString(1, email);
+            ResultSet rsCheck = psCheck.executeQuery();
+            rsCheck.next();
+
+            if (rsCheck.getInt(1) > 0) {
+                request.setAttribute("errorMsg", "⚠️ Email already registered as Turf Owner!");
+                request.getRequestDispatcher("Register.jsp").forward(request, response);
+                return;
+            }
+
+            rsCheck.close();
+            psCheck.close();
 
             // Generate unique turf_user_id
             String cleanedTurfName = turfName.replaceAll("\\s+", "");
@@ -308,23 +386,23 @@ public class TurfRegister extends HttpServlet {
                 try (PreparedStatement checkPs = conn.prepareStatement(
                         "SELECT COUNT(*) FROM turf_registration WHERE turf_user_id = ?")) {
                     checkPs.setString(1, turfUserId);
-                    try (ResultSet rsCheck = checkPs.executeQuery()) {
-                        rsCheck.next();
-                        exists = rsCheck.getInt(1) > 0;
+                    try (ResultSet rsCheck2 = checkPs.executeQuery()) {
+                        rsCheck2.next();
+                        exists = rsCheck2.getInt(1) > 0;
                     }
                 }
             }
-
             // Insert turf
             String sqlTurf = "INSERT INTO turf_registration "
                     + "(turf_user_id, owner_name, email, password, turf_name, turf_address, turf_phone, price_per_hour, upi_id, account_number, bank_name, ifsc_code) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
+            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
             psTurf = conn.prepareStatement(sqlTurf, Statement.RETURN_GENERATED_KEYS);
             psTurf.setString(1, turfUserId);
             psTurf.setString(2, ownerName);
             psTurf.setString(3, email);
-            psTurf.setString(4, password);
+            psTurf.setString(4, hashedPassword);
+//            psTurf.setString(4, password);
             psTurf.setString(5, turfName);
             psTurf.setString(6, turfAddress);
             psTurf.setString(7, turfPhone);
@@ -333,7 +411,6 @@ public class TurfRegister extends HttpServlet {
             psTurf.setString(10, accountNumber);
             psTurf.setString(11, bankName);
             psTurf.setString(12, ifscCode);
-
             int rows = psTurf.executeUpdate();
 
             if (rows > 0) {
@@ -346,7 +423,15 @@ public class TurfRegister extends HttpServlet {
                     saveImage(conn, request, uploadDir, turfId, "businessCertificate", "business_certificate");
                 }
             }
+            // Send Confirmation Email
+            boolean emailSent = sendTurfConfirmationEmail(email, turfUserId, ownerName);
 
+            if (!emailSent) {
+                conn.rollback();
+                request.setAttribute("errorMsg", "❌ Email sending failed. Registration cancelled.");
+                request.getRequestDispatcher("Register.jsp").forward(request, response);
+                return;
+            }
             conn.commit();
 
             response.getWriter().println("✅ Registration successful!<br>"
@@ -357,13 +442,29 @@ public class TurfRegister extends HttpServlet {
             e.printStackTrace();
             response.getWriter().println("❌ Error: " + e.getMessage());
         } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
-            try { if (psTurf != null) psTurf.close(); } catch (Exception ignored) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignored) {}
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception ignored) {
+            }
+            try {
+                if (psTurf != null) {
+                    psTurf.close();
+                }
+            } catch (Exception ignored) {
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception ignored) {
+            }
         }
     }
+
     private void saveImage(Connection conn, HttpServletRequest request, File uploadDir,
-                           int turfId, String fieldName, String imageType)
+            int turfId, String fieldName, String imageType)
             throws IOException, ServletException, SQLException {
 
         for (Part part : request.getParts()) {
