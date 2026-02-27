@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import util.DBConnection;
 
 @WebServlet("/LoginServlet")
@@ -35,20 +37,32 @@ public class LoginServlet extends HttpServlet {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            // ✅ NORMAL USER LOGIN
-            String userSql = "SELECT * FROM users WHERE email=? AND password=?";
+            
+             // ======================================
+            // ✅ NORMAL USER LOGIN (BCrypt encrypted)
+            // ======================================
+            String userSql = "SELECT user_id, name, password FROM users WHERE email=?";
             PreparedStatement userPs = con.prepareStatement(userSql);
             userPs.setString(1, email);
-            userPs.setString(2, password);
             ResultSet userRs = userPs.executeQuery();
 
-            if (userRs.next()) {
-                HttpSession session = request.getSession();
-                session.setAttribute("user_id", userRs.getString("user_id"));
-                session.setAttribute("name", userRs.getString("name"));
-                session.setAttribute("role", "user");
-                response.sendRedirect("UserDashboardServlet");
-                return;
+               if (userRs.next()) {
+
+                String hashedPassword = userRs.getString("password");
+
+                if (hashedPassword != null && BCrypt.checkpw(password, hashedPassword)) {
+
+                    HttpSession session = request.getSession();
+                    session.setAttribute("user_id", userRs.getString("user_id"));
+                    session.setAttribute("name", userRs.getString("name"));
+                    session.setAttribute("role", "user");
+
+                    response.sendRedirect("UserDashboardServlet");
+                    return;
+                    } else {
+                    response.sendRedirect("UserLogin.jsp?error=invalid");
+                    return;
+                }
             }
 
             // ✅ TURF OWNER LOGIN
