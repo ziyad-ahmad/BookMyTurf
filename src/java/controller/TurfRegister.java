@@ -398,6 +398,33 @@ public class TurfRegister extends HttpServlet {
             return;
         }
 
+        // -------- Payment Format Verification --------
+// UPI ID format validation
+        String upiRegex = "^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$";
+        if (!upiId.matches(upiRegex)) {
+            request.setAttribute("errorMsg", "❌ Invalid UPI ID. Example: name@upi");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+// Bank Account Number validation (9–18 digits)
+        String accountRegex = "^[0-9]{9,18}$";
+        if (!accountNumber.matches(accountRegex)) {
+            request.setAttribute("errorMsg", "❌ Invalid Bank Account Number.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+// IFSC Code validation
+        ifscCode = ifscCode.toUpperCase();
+        String ifscRegex = "^[A-Z]{4}0[A-Z0-9]{6}$";
+
+        if (!ifscCode.matches(ifscRegex)) {
+            request.setAttribute("errorMsg", "❌ Invalid IFSC Code. Example: SBIN0001234");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
 //        if (ownerName == null || ownerName.trim().isEmpty()
 //                || email == null || email.trim().isEmpty()
 //                || password == null || password.trim().isEmpty()
