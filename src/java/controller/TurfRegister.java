@@ -324,29 +324,96 @@ public class TurfRegister extends HttpServlet {
         String turfName = request.getParameter("turfName");
         String turfAddress = request.getParameter("turfAddress");
         String turfPhone = request.getParameter("turfPhone");
+        String phoneRegex = "^[6-9][0-9]{9}$";
+
+        if (turfPhone == null || !turfPhone.matches(phoneRegex)) {
+            request.setAttribute("errorMsg", "❌ Please enter a valid Indian mobile number.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
         String pricePerHour = request.getParameter("pricePerHour");
         String upiId = request.getParameter("upiId");
         String accountNumber = request.getParameter("accountNumber");
         String bankName = request.getParameter("bankName");
         String ifscCode = request.getParameter("ifscCode");
 
-        if (ownerName == null || ownerName.trim().isEmpty()
-                || email == null || email.trim().isEmpty()
-                || password == null || password.trim().isEmpty()
-                || turfName == null || turfName.trim().isEmpty()
-                || turfAddress == null || turfAddress.trim().isEmpty()
-                || turfPhone == null || turfPhone.trim().isEmpty()
-                || pricePerHour == null || pricePerHour.trim().isEmpty()
-                || upiId == null || upiId.trim().isEmpty()
-                || accountNumber == null || accountNumber.trim().isEmpty()
-                || bankName == null || bankName.trim().isEmpty()
-                || ifscCode == null || ifscCode.trim().isEmpty()) {
-
-            request.setAttribute("errorMsg", "❌ All fields are required.");
+        // 🔽 ADD VALIDATION HERE
+        if (ownerName == null || ownerName.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Owner Name is required.");
             request.getRequestDispatcher("Register.jsp").forward(request, response);
             return;
         }
 
+        if (email == null || email.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Email is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (password == null || password.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Password is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+        if (turfName == null || turfName.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Turf Name is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (turfAddress == null || turfAddress.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Turf Address is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (pricePerHour == null || pricePerHour.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Price per Hour is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (upiId == null || upiId.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ UPI ID is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (accountNumber == null || accountNumber.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Bank Account Number is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (bankName == null || bankName.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ Bank Name is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+        if (ifscCode == null || ifscCode.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "❌ IFSC Code is required.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
+
+//        if (ownerName == null || ownerName.trim().isEmpty()
+//                || email == null || email.trim().isEmpty()
+//                || password == null || password.trim().isEmpty()
+//                || turfName == null || turfName.trim().isEmpty()
+//                || turfAddress == null || turfAddress.trim().isEmpty()
+//                || turfPhone == null || turfPhone.trim().isEmpty()
+//                || pricePerHour == null || pricePerHour.trim().isEmpty()
+//                || upiId == null || upiId.trim().isEmpty()
+//                || accountNumber == null || accountNumber.trim().isEmpty()
+//                || bankName == null || bankName.trim().isEmpty()
+//                || ifscCode == null || ifscCode.trim().isEmpty()) {
+//
+//            request.setAttribute("errorMsg", "❌ All fields are required.");
+//            request.getRequestDispatcher("Register.jsp").forward(request, response);
+//            return;
+//        }
         Connection conn = null;
         PreparedStatement psTurf = null;
         ResultSet rs = null;
@@ -406,6 +473,7 @@ public class TurfRegister extends HttpServlet {
             psTurf.setString(5, turfName);
             psTurf.setString(6, turfAddress);
             psTurf.setString(7, turfPhone);
+
             psTurf.setBigDecimal(8, new java.math.BigDecimal(pricePerHour));
             psTurf.setString(9, upiId);
             psTurf.setString(10, accountNumber);
