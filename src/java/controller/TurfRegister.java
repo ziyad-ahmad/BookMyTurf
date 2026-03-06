@@ -541,7 +541,6 @@ public class TurfRegister extends HttpServlet {
                 return;
             }
             conn.commit();
-
             response.getWriter().println("✅ Registration successful!<br>"
                     + "Your Turf User ID: <b>" + turfUserId + "</b><br>"
                     + "Your turf details are under admin review.");
