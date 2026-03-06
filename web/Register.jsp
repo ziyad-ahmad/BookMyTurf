@@ -188,12 +188,30 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Bank Name</label>
-                                        <input type="text" class="form-control" id="bankName" name="bankName" placeholder="Enter bank name" required>
+                                          <!--dropdown list for bank-->
+                                        <select class="form-control" id="bankName" name="bankName" required>
+                                            <option value="">Select Bank</option>
+                                            <option value="State Bank of India">State Bank of India</option>
+                                            <option value="HDFC Bank">HDFC Bank</option>
+                                            <option value="ICICI Bank">ICICI Bank</option>
+                                            <option value="Axis Bank">Axis Bank</option>
+                                            <option value="Punjab National Bank">Punjab National Bank</option>
+                                            <option value="Bank of Baroda">Bank of Baroda</option>
+                                            <option value="Canara Bank">Canara Bank</option>
+                                            <option value="Union Bank of India">Union Bank of India</option>
+                                            <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                                            <option value="IndusInd Bank">IndusInd Bank</option>
+                                        </select>
                                     </div>
 
                                     <div class="col-md-6 mb-4">
                                         <label class="form-label">IFSC Code</label>
                                         <input type="text" class="form-control" id="ifscCode" name="ifscCode" placeholder="Enter IFSC code" required>
+                                    </div>
+                                    <!--                                    QR code upload-->
+                                    <div class="mb-4">
+                                        <label class="form-label">Upload UPI QR Code</label>
+                                        <input type="file" class="form-control" name="upiQR" accept=".jpg,.jpeg,.png" required>
                                     </div>
                                 </div>
 
@@ -212,44 +230,44 @@
         <script src="js/aos.js"></script>
         <script src="js/custom.js"></script>
 
-<!--        <script>
-            document.getElementById('registerForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                const pass = document.getElementById('password').value;
-                const cpass = document.getElementById('confirmPassword').value;
-
-                if (pass !== cpass) {
-                    document.getElementById('registerAlert').innerHTML =
-                            '<div class="alert alert-danger mt-3">Passwords do not match!</div>';
-                    return;
-                }
-
-                const ownership = document.getElementById('ownershipProof').value;
-                const upi = document.getElementById('upiId').value.trim();
-                const ifsc = document.getElementById('ifscCode').value.trim();
-
-                if (!ownership) {
-                    document.getElementById('registerAlert').innerHTML =
-                            '<div class="alert alert-danger mt-3">Please upload Turf Ownership Proof!</div>';
-                    return;
-                }
-
-                if (!upi.includes('@')) {
-                    document.getElementById('registerAlert').innerHTML =
-                            '<div class="alert alert-danger mt-3">Please enter a valid UPI ID!</div>';
-                    return;
-                }
-
-                if (ifsc.length < 8) {
-                    document.getElementById('registerAlert').innerHTML =
-                            '<div class="alert alert-danger mt-3">Please enter a valid IFSC code!</div>';
-                    return;
-                }
-
-                document.getElementById('registerAlert').innerHTML =
-                        '<div class="alert alert-success mt-3">Registration successful!</div>';
-                this.reset();
-            });
-        </script>-->
+        <!--        <script>
+                    document.getElementById('registerForm').addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const pass = document.getElementById('password').value;
+                        const cpass = document.getElementById('confirmPassword').value;
+        
+                        if (pass !== cpass) {
+                            document.getElementById('registerAlert').innerHTML =
+                                    '<div class="alert alert-danger mt-3">Passwords do not match!</div>';
+                            return;
+                        }
+        
+                        const ownership = document.getElementById('ownershipProof').value;
+                        const upi = document.getElementById('upiId').value.trim();
+                        const ifsc = document.getElementById('ifscCode').value.trim();
+        
+                        if (!ownership) {
+                            document.getElementById('registerAlert').innerHTML =
+                                    '<div class="alert alert-danger mt-3">Please upload Turf Ownership Proof!</div>';
+                            return;
+                        }
+        
+                        if (!upi.includes('@')) {
+                            document.getElementById('registerAlert').innerHTML =
+                                    '<div class="alert alert-danger mt-3">Please enter a valid UPI ID!</div>';
+                            return;
+                        }
+        
+                        if (ifsc.length < 8) {
+                            document.getElementById('registerAlert').innerHTML =
+                                    '<div class="alert alert-danger mt-3">Please enter a valid IFSC code!</div>';
+                            return;
+                        }
+        
+                        document.getElementById('registerAlert').innerHTML =
+                                '<div class="alert alert-success mt-3">Registration successful!</div>';
+                        this.reset();
+                    });
+                </script>-->
     </body>
 </html>
