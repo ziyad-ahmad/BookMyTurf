@@ -356,6 +356,16 @@ public class TurfRegister extends HttpServlet {
             request.getRequestDispatcher("Register.jsp").forward(request, response);
             return;
         }
+
+        // Strong password validation
+        String passwordRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+
+        if (!password.matches(passwordRegex)) {
+            request.setAttribute("errorMsg",
+                    "❌ Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character.");
+            request.getRequestDispatcher("Register.jsp").forward(request, response);
+            return;
+        }
         if (turfName == null || turfName.trim().isEmpty()) {
             request.setAttribute("errorMsg", "❌ Turf Name is required.");
             request.getRequestDispatcher("Register.jsp").forward(request, response);
@@ -516,6 +526,9 @@ public class TurfRegister extends HttpServlet {
                     saveImage(conn, request, uploadDir, turfId, "turfPhotos", "turf_photo");
                     saveImage(conn, request, uploadDir, turfId, "ownershipProof", "ownership_proof");
                     saveImage(conn, request, uploadDir, turfId, "businessCertificate", "business_certificate");
+
+                    //add one more column for QR
+                    saveImage(conn, request, uploadDir, turfId, "upiQR", "upi_qr");
                 }
             }
             // Send Confirmation Email
