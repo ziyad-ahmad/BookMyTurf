@@ -1,11 +1,97 @@
+//package controller;
+//
+//import jakarta.servlet.ServletException;
+//import jakarta.servlet.annotation.WebServlet;
+//import jakarta.servlet.http.HttpServlet;
+//import jakarta.servlet.http.HttpServletRequest;
+//import jakarta.servlet.http.HttpServletResponse;
+//import jakarta.servlet.http.HttpSession;
+//
+//import java.io.IOException;
+//import java.sql.Connection;
+//import java.sql.PreparedStatement;
+//import java.sql.ResultSet;
+//
+//import util.DBConnection;
+//
+//@WebServlet("/BookSlot")
+//public class BookSlotServlet extends HttpServlet {
+//
+//    @Override
+//    protected void doGet(HttpServletRequest req, HttpServletResponse res)
+//            throws ServletException, IOException {
+//
+//        // 1️⃣ Check user login
+//        HttpSession session = req.getSession(false);
+//        if (session == null || session.getAttribute("user_id") == null) {
+//            res.sendRedirect("UserLogin.jsp");
+//            return;
+//        }
+//
+//        String userId = (String) session.getAttribute("user_id");
+//
+//        // 2️⃣ Read request parameters
+//        String turfIdStr = req.getParameter("turfId");
+//        String slotIdStr = req.getParameter("slotId");
+//        String date = req.getParameter("date");
+//
+//        if (turfIdStr == null || slotIdStr == null || date == null) {
+//            res.getWriter().println("Invalid booking request");
+//            return;
+//        }
+//
+//        int turfId = Integer.parseInt(turfIdStr);
+//        int slotId = Integer.parseInt(slotIdStr);
+//
+//        try (Connection con = DBConnection.getConnection()) {
+//
+//            // 3️⃣ Check if slot already booked
+//            String checkSql =
+//                "SELECT booking_id FROM bookings " +
+//                "WHERE turf_id=? AND slot_id=? AND booking_date=? AND status='BOOKED'";
+//
+//            PreparedStatement checkPs = con.prepareStatement(checkSql);
+//            checkPs.setInt(1, turfId);
+//            checkPs.setInt(2, slotId);
+//            checkPs.setString(3, date);
+//
+//            ResultSet rs = checkPs.executeQuery();
+//
+//            if (rs.next()) {
+//                res.getWriter().println("<h3>This slot is already booked.</h3>");
+//                return;
+//            }
+//
+//            // 4️⃣ Insert booking
+//            String insertSql =
+//                "INSERT INTO bookings (user_id, turf_id, slot_id, booking_date, status) " +
+//                "VALUES (?, ?, ?, ?, 'BOOKED')";
+//
+//            PreparedStatement ps = con.prepareStatement(insertSql);
+//            ps.setString(1, userId);
+//            ps.setInt(2, turfId);
+//            ps.setInt(3, slotId);
+//            ps.setString(4, date);
+//
+//            ps.executeUpdate();
+//
+//            // 5️⃣ Redirect to MyBookings page
+//            res.sendRedirect("MyBookings");
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            res.getWriter().println("Booking failed due to server error.");
+//        }
+//    }
+//}
+
+
+
 package controller;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -23,6 +109,7 @@ public class BookSlotServlet extends HttpServlet {
 
         // 1️⃣ Check user login
         HttpSession session = req.getSession(false);
+
         if (session == null || session.getAttribute("user_id") == null) {
             res.sendRedirect("UserLogin.jsp");
             return;
@@ -30,30 +117,31 @@ public class BookSlotServlet extends HttpServlet {
 
         String userId = (String) session.getAttribute("user_id");
 
-        // 2️⃣ Read request parameters
+        // 2️⃣ Read parameters
         String turfIdStr = req.getParameter("turfId");
-        String slotIdStr = req.getParameter("slotId");
         String date = req.getParameter("date");
+        String startTime = req.getParameter("startTime");
+        String endTime = req.getParameter("endTime");
 
-        if (turfIdStr == null || slotIdStr == null || date == null) {
+        if (turfIdStr == null || date == null || startTime == null || endTime == null) {
             res.getWriter().println("Invalid booking request");
             return;
         }
 
         int turfId = Integer.parseInt(turfIdStr);
-        int slotId = Integer.parseInt(slotIdStr);
 
         try (Connection con = DBConnection.getConnection()) {
 
             // 3️⃣ Check if slot already booked
             String checkSql =
                 "SELECT booking_id FROM bookings " +
-                "WHERE turf_id=? AND slot_id=? AND booking_date=? AND status='BOOKED'";
+                "WHERE turf_id=? AND booking_date=? AND start_time=? AND end_time=? AND status='BOOKED'";
 
             PreparedStatement checkPs = con.prepareStatement(checkSql);
             checkPs.setInt(1, turfId);
-            checkPs.setInt(2, slotId);
-            checkPs.setString(3, date);
+            checkPs.setString(2, date);
+            checkPs.setString(3, startTime);
+            checkPs.setString(4, endTime);
 
             ResultSet rs = checkPs.executeQuery();
 
@@ -64,18 +152,20 @@ public class BookSlotServlet extends HttpServlet {
 
             // 4️⃣ Insert booking
             String insertSql =
-                "INSERT INTO bookings (user_id, turf_id, slot_id, booking_date, status) " +
-                "VALUES (?, ?, ?, ?, 'BOOKED')";
+                "INSERT INTO bookings (user_id, turf_id, booking_date, start_time, end_time, status) " +
+                "VALUES (?, ?, ?, ?, ?, 'BOOKED')";
 
             PreparedStatement ps = con.prepareStatement(insertSql);
+
             ps.setString(1, userId);
             ps.setInt(2, turfId);
-            ps.setInt(3, slotId);
-            ps.setString(4, date);
+            ps.setString(3, date);
+            ps.setString(4, startTime);
+            ps.setString(5, endTime);
 
             ps.executeUpdate();
 
-            // 5️⃣ Redirect to MyBookings page
+            // 5️⃣ Redirect to MyBookings
             res.sendRedirect("MyBookings");
 
         } catch (Exception e) {
