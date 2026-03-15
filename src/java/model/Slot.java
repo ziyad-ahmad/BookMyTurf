@@ -10,13 +10,10 @@ package model;
  */
 
 public class Slot {
-    private int slotId;
     private String startTime;
     private String endTime;
     private boolean booked;
 
-    public int getSlotId() { return slotId; }
-    public void setSlotId(int slotId) { this.slotId = slotId; }
 
     public String getStartTime() { return startTime; }
     public void setStartTime(String startTime) { this.startTime = startTime; }
