@@ -415,7 +415,7 @@ public class TurfRegister extends HttpServlet {
             request.setAttribute("errorMsg", "❌ Invalid UPI ID. Example: name@upi");
             request.getRequestDispatcher("Register.jsp").forward(request, response);
             return;
-        }
+        }   
 
 // Bank Account Number validation (9–18 digits)
         String accountRegex = "^[0-9]{9,18}$";
