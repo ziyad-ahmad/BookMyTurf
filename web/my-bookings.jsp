@@ -2,6 +2,18 @@
 <%@ page import="java.util.List" %>
 
 <!DOCTYPE html>
+<%
+response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+response.setHeader("Pragma", "no-cache");
+response.setDateHeader("Expires", 0);
+
+HttpSession session1 = request.getSession(false);
+
+if(session1 == null || !"user".equals(session1.getAttribute("role"))){
+    response.sendRedirect("LoginUser.jsp");
+    return;
+}
+%>
 <html>
 <head>
     <title>My Bookings | BookMyTurf</title>
